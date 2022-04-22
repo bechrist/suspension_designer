@@ -1,4 +1,14 @@
 %% Suspension Solver Test
+% This script tests a solver for multibody suspension kinematic design
+
+%% Environment Steup
+% Clear Environment
+clc; clear; close all;
+
+% Stylization
+set(groot,'defaulttextinterpreter','latex');
+set(groot,'defaultAxesTickLabelInterpreter','latex');
+set(groot,'defaultLegendInterpreter','latex');
 
 %% Targets & Bounds
 %%% Vehicle Targets
@@ -12,25 +22,26 @@ Target.Rl         = 7.85 .* (25.4);   % Nominal Loaded Radius [in -> mm]
 
 Target.CG(1) = Target.Wheelbase * (1-Target.WeightDist); % C.G. to Front Axle (a) [mm]
 
-%%% Suspension Objectives
-Target(1).Track       =  1220;                    % Nominal Front Track Width [mm]
+%%% Suspension Targets
+Target(1).Track      =  1220;                    % Nominal Front Track Width [mm]
 
-Target(1).Toe         =  0.50 .* (pi/180);        % Static Toe (Positive Out) [deg -> rad]
+Target(1).Toe        =  0.50 .* (pi/180);        % Static Toe (Positive Out) [deg -> rad]
 
-Target(1).AntiDive    =  25;                      % Normalized FBPC Height [%]
-Target(1).Caster      =  3.00 .* (pi/180);        % Static Caster [deg -> rad]
-Target(1).CasterGain  =  0.05 .* (pi/(180*25.4)); % Caster Gain [deg/in -> rad/mm]
+Target(1).AntiDive   =  25;                      % Normalized FBPC Height [%]
+Target(1).Caster     =  3.00 .* (pi/180);        % Static Caster [deg -> rad]
+Target(1).CasterGain =  0.05 .* (pi/(180*25.4)); % Caster Gain [deg/in -> rad/mm]
 
-Target(1).AntiRoll    =  25;                      % Normalized FBRC Height [%]
-Target(1).Camber      = -1.60 .* (pi/180);        % Static Camber [deg -> rad]
-Target(1).CamberGain  = -0.50 .* (pi/(180*25.4)); % Camber Gain [deg/in -> rad/mm]
+Target(1).AntiRoll   =  25;                      % Normalized FBRC Height [%]
+Target(1).Camber     = -1.60 .* (pi/180);        % Static Camber [deg -> rad]
+Target(1).CamberGain = -0.50 .* (pi/(180*25.4)); % Camber Gain [deg/in -> rad/mm]
 
-Target(1).Scrub       =  0.50 .* (25.4);          % Maximum Scrub [in -> mm]
-Target(1).KPI         =  5.00 .* (pi/180);        % Target KPI [deg -> rad]
+Target(1).Scrub      =  0.50 .* (25.4);          % Maximum Scrub [in -> mm]
+Target(1).KPI        =  5.00 .* (pi/180);        % Target KPI [deg -> rad]
 
-Target(1).RideRatio   =  0.80;                    % Ride Motion Ratio Target [] 
-Target(1).ARBRatio    =  0.80;                    % ARB Motion Ratio Target [] 
+Target(1).RideRatio  =  0.80;                    % Ride Motion Ratio Target [] 
+Target(1).ARBRatio   =  0.80;                    % ARB Motion Ratio Target [] 
 
+%%% Design Space Bounds
 % Inboard  Pickup: Longitudinal |   Lateral   |   Vertical  | 
 Bound(1).LA =     [  3.00,  5.00;  8.00,  8.70;  0.50,  1.50] .* (25.4); % FLA Bounds (XCS) [in -> mm]
 Bound(1).UA =     [  0   ,  0   ;  8.70, 10.00;  6.00,  8.00] .* (25.4); % FUA Bounds (XCS) [in -> mm]
@@ -46,20 +57,19 @@ Bound(1).TB =     [  2.50,  2.81;- 0.88,- 1.25;- 1.50,  0.50] .* (25.4); % FTB B
 Bound(1).PB =     [  2.25,  3.75;- 1.75,- 0.85;- 2.50,  2.50] .* (25.4); % FPB Bounds (ACS) [in -> mm] 
 Bound(1).SB =     [  2.25,  3.75;- 1.75,- 0.85;- 2.50,  2.50] .* (25.4); % FSB Bounds (RCS) [in -> mm]
 
-%% Initialize Frames 
+%% Solver
+%%% Initialize Frames 
 Frame = InitializeFrame( Target );
 
-%% Design Generation
-x0 = ones(13,1)/2;
+%%% Design Generation
+Frame = DesignGeneration(ones(13,1)/2, Target, Bound, Frame);
 
-Frame = DesignGeneration(x0, Target, Bound, Frame);
-
-%% Local Function
+%% Local Functions
 function Frame = InitializeFrame( Target )
     % Inermediate Frame (1)
     Frame = KinematicFrame();
     Frame.Name = "Intermediate";
-    Frame.Tag = "I";
+    Frame.Key = "I";
     
     % Body Frame (2)
     Frame = Frame.AddFrame("Body", "B", "I", ...
@@ -93,20 +103,20 @@ function Frame = InitializeFrame( Target )
     
     % Compliance Mechanism Frames
     Frame = Frame.AddFrame("Rocker", "RK", "X", zeros(3,1), zeros(3,1));
-    Frame = Frame.AddFrame("Shock", "RS", "X", zeros(3,1), zeros(3,1));
+    Frame = Frame.AddFrame("Shock", "SH", "X", zeros(3,1), zeros(3,1));
 end
 
 function Frame = DesignGeneration( x0, Target, Bound, Frame )
     %% Indexing Maps and Dependency Graph
     FMap = containers.Map();
     for i = 1:numel(Frame)
-        FMap(Frame(i).Tag)=i;
+        FMap(Frame(i).Key)=i;
     end
     
     PMap = containers.Map();
     for i = 1:numel(Frame)
         for j = 1:numel(Frame(i).PoI)
-            PMap( strcat(Frame(i).Tag, "-", Frame(i).PoI(j).Tag) ) = j;
+            PMap( strcat(Frame(i).Key, "-", Frame(i).PoI(j).Key) ) = j;
         end
     end
     
@@ -114,27 +124,21 @@ function Frame = DesignGeneration( x0, Target, Bound, Frame )
     Frame(FMap("I")).Graph = digraph(Nodes(:,1), Nodes(:,2), Weights);
     
     %% Design Space Sampling
-    % x0(1)  - Inboard Lower A-Arm y-Coord (X)    
+    % x0(1) - Inboard Lower A-Arm y-Coord (X)    
     Frame(FMap("LA")).Origin(2) = Bound.LA(2,1) + x0(1).*diff(Bound.LA(2,:),1,2);
     
-    % x0(2)  - Inboard Tie Rod x-Coord (X)
-    % x0(3)  - Inboard Tie Rod y-Coord (X)
-    % x0(4)  - Inboard Tie Rod z-Coord (X)
+    % x0(2:4) - Inboard Tie Rod (x,y,z)-Coord (X)
     Frame(FMap("TR")).Origin = Bound.TA(:,1) + x0(2:4).*diff(Bound.TA,1,2);
     
-    % x0(5)  - Outboard Lower A-Arm x-Coord (W)
-    % x0(6)  - Outboard Lower A-Arm y-Coord (W)
-    % x0(7)  - Outboard Lower A-Arm z-Coord (W)
+    % x0(5:7) - Outboard Lower A-Arm (x,y,z)-Coord (W)
     Frame(FMap("W")).PoI(PMap("W-LB")).Position = Bound.LB(:,1) + ...
         x0(5:7).*diff(Bound.LB,1,2);
     
-    % x0(8)  - Outboard Upper A-Arm x-Coord (W)
-    % x0(9)  - Outboard Upper A-Arm z-Coord (W)
+    % x0(8:9) - Outboard Upper A-Arm (x,z)-Coord (W)
     Frame(FMap("W")).PoI(PMap("W-UB")).Position([1,3]) = Bound.UB([1,3],1) + ...
         x0(8:9).*diff(Bound.UB([1,3],:),1,2);
         
-    % x0(10) - Outboard Tie Rod x-Coord (W)
-    % x0(11) - Outboard Tie Rod y-Coord (W)
+    % x0(10:11) - Outboard Tie Rod (x,y)-Coord (W)
     Frame(FMap("W")).PoI(PMap("W-TB")).Position(1:2) = Bound.TB(1:2,1) + ...
         x0(10:11).*diff(Bound.TB(1:2,:),1,2);
     

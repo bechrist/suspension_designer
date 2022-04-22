@@ -1,17 +1,16 @@
 classdef KinematicFrame
     properties
-        Name     (1,1) string = string.empty   % Frame Name
-        Tag      (1,1) string = string.empty   % Frame Tag
-        Base     (:,1) string = string.empty   % Base Frame
-        Origin   (3,1) double = zeros(3,1)     % Origin in Base Frame
-        Rotation (3,1) double = zeros(3,1)     % Orientation in Base Frame
-        Follower (:,1) string = string.empty   % Follower Frame(s)
-        PoI      (:,1) struct = struct('Name', {"Origin", "x-Axis", ...
-                                                "y-Axis", "z-Axis"}, ...
-                                       'Tag', {"O", "E1", "E2", "E3"}, ...
-                                       'Position', {[0;0;0], [25;0;0], ...
-                                                    [0;25;0], [0;0;25]}) 
-                                               % Point(s) of Interest
+        Name     (1,1) string  = ""         % Frame Name
+        Key      (1,1) string  = ""         % Frame Keys
+        Graph    (1,1) digraph = digraph(); % System Graph
+        Base     (:,1) string  = ""         % Base Frame
+        Origin   (3,1) double  = zeros(3,1) % Origin in Base Frame
+        Rotation (3,1) double  = zeros(3,1) % Orientation in Base Frame
+        Follower (:,1) string  = ""         % Follower Frame(s)
+        PoI      (:,1) struct  = ...        % Point(s) of Interest
+            struct('Name'    , {"Origin", "x-Axis", "y-Axis", "z-Axis"}, ...
+                   'Key'     , {"O"     , "E1"    , "E2"    , "E3"    }, ...
+                   'Position', {[0;0;0] , [25;0;0], [0;25;0], [0;0;25]})
     end
     
     methods
@@ -19,38 +18,38 @@ classdef KinematicFrame
             % All Values Set by Default
         end
         
-        function obj = AddFrame(obj, Name, Tag, Base, Origin, Rotation)
+        function obj = AddFrame(obj, Name, Key, Base, Origin, Rotation)
             obj(end+1).Name   = Name;
-            obj(end).Tag      = Tag;
+            obj(end).Key      = Key;
             obj(end).Base     = Base;
             obj(end).Origin   = Origin;
             obj(end).Rotation = Rotation;
             obj(end).Follower = char.empty;
             
-            BaseIdx = find(strcmp([obj.Tag], Base), 1);
+            BaseIdx = find(strcmp([obj.Key], Base), 1);
             if strcmp(obj(BaseIdx).Follower,"")
-               obj(BaseIdx).Follower = Tag;
+               obj(BaseIdx).Follower = Key;
             else
-                obj(BaseIdx).Follower(end+1) = Tag;
+                obj(BaseIdx).Follower(end+1) = Key;
             end
         end
         
-        function obj = AddPoI(obj, FoI, Name, Tag, Position)
+        function obj = AddPoI(obj, FoI, Name, Key, Position)
             FoI = strcmp([obj.Name],FoI);
             
             Point.Name     = Name;
-            Point.Tag      = Tag; 
+            Point.Key      = Key; 
             Point.Position = Position;
             
             obj(FoI).PoI = [obj(FoI).PoI; Point];
         end
         
         function [Nodes, Weights] = GenerateGraph(obj, FoI, Nodes, Weights)
-            FoI = find(strcmp([obj.Tag],FoI));
+            FoI = find(strcmp([obj.Key],FoI));
             
             if ~all(strcmp(obj(FoI).Follower,""))
                 for j = 1:numel(obj(FoI).Follower)
-                    FollowerIdx = find(strcmp([obj.Tag],obj(FoI).Follower(j)));
+                    FollowerIdx = find(strcmp([obj.Key],obj(FoI).Follower(j)));
 
                     Nodes(end+1,:) = [FoI, FollowerIdx];
                     Weights(end+1) = 1;
@@ -59,13 +58,13 @@ classdef KinematicFrame
                     Weights(end+1) = -1;
 
                     [Nodes, Weights] = obj.GenerateGraph( ...
-                        obj(FollowerIdx).Tag, Nodes, Weights);
+                        obj(FollowerIdx).Key, Nodes, Weights);
                 end
             end
         end
         
         function obj = UpdateFrame(obj, FoI, Origin, Rotation)
-            FoI = strcmp([obj.Tag],FoI);
+            FoI = strcmp([obj.Key],FoI);
             
             if ~isempty(Origin)
                 obj(FoI).Origin   = Origin;
@@ -77,24 +76,24 @@ classdef KinematicFrame
         end
         
         function obj = UpdatePoI(obj, FoI, PoI, Position)
-            FoI = strcmp([obj.Tag],FoI);
-            PoI = strcmp([obj(FoI).PoI.Tag], PoI);
+            FoI = strcmp([obj.Key],FoI);
+            PoI = strcmp([obj(FoI).PoI.Key], PoI);
             
             obj(FoI).PoI(PoI).Position = Position;
         end
         
         function P = EvaluatePoI(obj, PoI, FoI, FoE)
-            FoI = obj(strcmp([obj.Tag],FoI));
+            FoI = obj(strcmp([obj.Key],FoI));
             
             if isstring(PoI) 
-                P0 = FoI.PoI(strcmp([FoI.PoI.Tag],PoI)).Position;   
+                P0 = FoI.PoI(strcmp([FoI.PoI.Key],PoI)).Position;   
             elseif isnumeric(PoI)
                 P0 = PoI; 
             else
                 error('PoI Argument of Invalid Type')
             end
             
-            if strcmp(FoI.Tag, FoE)
+            if strcmp(FoI.Key, FoE)
                 P = P0;
             elseif ismember(FoE, FoI.Follower)
                 error('Not Complete')
