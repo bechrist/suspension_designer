@@ -23,23 +23,23 @@ Target.Rl         = 7.85 .* (25.4);   % Nominal Loaded Radius [in -> mm]
 Target.CG(1) = Target.Wheelbase * (1-Target.WeightDist); % C.G. to Front Axle (a) [mm]
 
 %%% Suspension Targets
-Target(1).Track      =  1220;                    % Nominal Front Track Width [mm]
+Target(1).Track       =  1220;                    % Nominal Front Track Width [mm]
 
-Target(1).Toe        =  0.50 .* (pi/180);        % Static Toe (Positive Out) [deg -> rad]
+Target(1).Toe         =  0.50 .* (pi/180);        % Static Toe (Positive Out) [deg -> rad]
 
-Target(1).AntiDive   =  25;                      % Normalized FBPC Height [%]
-Target(1).Caster     =  3.00 .* (pi/180);        % Static Caster [deg -> rad]
-Target(1).CasterGain =  0.05 .* (pi/(180*25.4)); % Caster Gain [deg/in -> rad/mm]
+Target(1).PitchCenter =  0;                       % Normalized FBPC Height [%]
+Target(1).Caster      =  3.00 .* (pi/180);        % Static Caster [deg -> rad]
+Target(1).CasterGain  =  0.00 .* (pi/(180*25.4)); % Caster Gain [deg/in -> rad/mm]
 
-Target(1).AntiRoll   =  25;                      % Normalized FBRC Height [%]
-Target(1).Camber     = -1.60 .* (pi/180);        % Static Camber [deg -> rad]
-Target(1).CamberGain = -0.50 .* (pi/(180*25.4)); % Camber Gain [deg/in -> rad/mm]
+Target(1).RollCenter  =  25;                      % Normalized FBRC Height [%]
+Target(1).Camber      = -1.60 .* (pi/180);        % Static Camber [deg -> rad]
+Target(1).CamberGain  = -0.50 .* (pi/(180*25.4)); % Camber Gain [deg/in -> rad/mm]
 
-Target(1).Scrub      =  0.50 .* (25.4);          % Maximum Scrub [in -> mm]
-Target(1).KPI        =  5.00 .* (pi/180);        % Target KPI [deg -> rad]
+Target(1).Scrub       =  0.50 .* (25.4);          % Maximum Scrub [in -> mm]
+Target(1).KPI         =  5.00 .* (pi/180);        % Target KPI [deg -> rad]
 
-Target(1).RideRatio  =  0.80;                    % Ride Motion Ratio Target [] 
-Target(1).ARBRatio   =  0.80;                    % ARB Motion Ratio Target [] 
+Target(1).RideRatio   =  0.80;                    % Ride Motion Ratio Target [] 
+Target(1).ARBRatio    =  0.80;                    % ARB Motion Ratio Target [] 
 
 %%% Design Space Bounds
 % Inboard  Pickup: Longitudinal |   Lateral   |   Vertical  | 
@@ -58,98 +58,22 @@ Bound(1).PB =     [  2.25,  3.75;- 1.75,- 0.85;- 2.50,  2.50] .* (25.4); % FPB B
 Bound(1).SB =     [  2.25,  3.75;- 1.75,- 0.85;- 2.50,  2.50] .* (25.4); % FSB Bounds (RCS) [in -> mm]
 
 %% Solver
-%%% Initialize Frames 
-Frame = InitializeFrame( Target );
+p0 = ones(11,1)/2;
+
+%%% Initialize Suspension
+Frame = DoubleWishboneInit( Target, Bound, p0 );
 
 %%% Design Generation
 Frame = DesignGeneration(ones(13,1)/2, Target, Bound, Frame);
 
 %% Local Functions
-function Frame = InitializeFrame( Target )
-    % Inermediate Frame (1)
-    Frame = KinematicFrame();
-    Frame.Name = "Intermediate";
-    Frame.Key = "I";
-    
-    % Body Frame (2)
-    Frame = Frame.AddFrame("Body", "B", "I", ...
-        [0; 0; Target.Ride], [0; Target.Rake; 0]);
-    
-    % Tire and Wheel Frames (3,4)
-    Frame = Frame.AddFrame("Tire", "T", "I", ...
-        [Target.CG(1); Target.Track/2; 0], [-Target.Camber; 0; Target.Toe]);
-    Frame = Frame.AddFrame("Wheel", "W", "T", ...
-        [0; 0; Target.Rl], [0; -Target.Caster; 0]);
-    
-    Frame = Frame.AddPoI("Wheel", "Lower Pickup", "LB", zeros(3,1));
-    Frame = Frame.AddPoI("Wheel", "Upper Pickup", "UB", zeros(3,1));
-    Frame = Frame.AddPoI("Wheel", "Tie Rod Pickup", "TB", zeros(3,1));
-    
-    % Axle Frame (5)
-    Frame = Frame.AddFrame("Axle", "X", "B", [Target.CG(1); 0; 0], zeros(3,1));
-    
-    % Suspension Element Frames
-    Frame = Frame.AddFrame("Lower A-Arm", "LA", "X", zeros(3,1), zeros(3,1));
-    Frame = Frame.AddFrame("Upper A-Arm", "UA", "X", zeros(3,1), zeros(3,1));
-    Frame = Frame.AddFrame("Tie Rod", "TR", "X", zeros(3,1), zeros(3,1));
-    
-    Frame = Frame.AddPoI("Lower A-Arm", "Apex", "LB", zeros(3,1));
-    Frame = Frame.AddPoI("Lower A-Arm", "Front Pickup", "LAF", zeros(3,1));
-    Frame = Frame.AddPoI("Lower A-Arm", "Rear Pickup", "LAR", zeros(3,1));
-    
-    Frame = Frame.AddPoI("Upper A-Arm", "Apex", "UB", zeros(3,1));
-    Frame = Frame.AddPoI("Upper A-Arm", "Front Pickup", "UAF", zeros(3,1));
-    Frame = Frame.AddPoI("Upper A-Arm", "Rear Pickup", "UAR", zeros(3,1));
-    
-    % Compliance Mechanism Frames
-    Frame = Frame.AddFrame("Rocker", "RK", "X", zeros(3,1), zeros(3,1));
-    Frame = Frame.AddFrame("Shock", "SH", "X", zeros(3,1), zeros(3,1));
-end
+
 
 function Frame = DesignGeneration( x0, Target, Bound, Frame )
-    %% Indexing Maps and Dependency Graph
-    FMap = containers.Map();
-    for i = 1:numel(Frame)
-        FMap(Frame(i).Key)=i;
-    end
-    
-    PMap = containers.Map();
-    for i = 1:numel(Frame)
-        for j = 1:numel(Frame(i).PoI)
-            PMap( strcat(Frame(i).Key, "-", Frame(i).PoI(j).Key) ) = j;
-        end
-    end
-    
-    [Nodes, Weights] = Frame.GenerateGraph("I", [], []);
-    Frame(FMap("I")).Graph = digraph(Nodes(:,1), Nodes(:,2), Weights);
-    
-    %% Design Space Sampling
-    % x0(1) - Inboard Lower A-Arm y-Coord (X)    
-    Frame(FMap("LA")).Origin(2) = Bound.LA(2,1) + x0(1).*diff(Bound.LA(2,:),1,2);
-    
-    % x0(2:4) - Inboard Tie Rod (x,y,z)-Coord (X)
-    Frame(FMap("TR")).Origin = Bound.TA(:,1) + x0(2:4).*diff(Bound.TA,1,2);
-    
-    % x0(5:7) - Outboard Lower A-Arm (x,y,z)-Coord (W)
-    Frame(FMap("W")).PoI(PMap("W-LB")).Position = Bound.LB(:,1) + ...
-        x0(5:7).*diff(Bound.LB,1,2);
-    
-    % x0(8:9) - Outboard Upper A-Arm (x,z)-Coord (W)
-    Frame(FMap("W")).PoI(PMap("W-UB")).Position([1,3]) = Bound.UB([1,3],1) + ...
-        x0(8:9).*diff(Bound.UB([1,3],:),1,2);
-        
-    % x0(10:11) - Outboard Tie Rod (x,y)-Coord (W)
-    Frame(FMap("W")).PoI(PMap("W-TB")).Position(1:2) = Bound.TB(1:2,1) + ...
-        x0(10:11).*diff(Bound.TB(1:2,:),1,2);
-    
-    % x0(12) - Lower A-Arm Swing Angle (X)
-    Frame(FMap("LA")).Rotation(3) = x0(12);
-    
-    % x0(13) - Upper A-Arm Swing Angle (X)
-    Frame(FMap("UA")).Rotation(3) = x0(13);
     
     %% Roll Design
     % 1a. Anti-Roll / Camber Gain -> Instant Roll Center 
+    % 1b. Anti-Pitch / Caster Gain -> Instant Pitch Center 
     % 1b. Instant Pitch Center    -> LA (z') 
     % 2.  Kingpin Geometry        -> UB (y)
     % 3.  Bump Steer Colinearity  -> UA (y',z')
