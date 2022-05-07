@@ -1,37 +1,24 @@
-classdef KinematicFrame
+classdef KinematicSystem
     properties
-        Name     (1,1) string  = ""         % Frame Name
-        Key      (1,1) string  = ""         % Frame Keys
-        Graph    (1,1) digraph = digraph(); % System Graph
-        Base     (:,1) string  = ""         % Base Frame
-        Origin   (3,1) double  = zeros(3,1) % Origin in Base Frame
-        Rotation (3,1) double  = zeros(3,1) % Orientation in Base Frame
-        Follower (:,1) string  = ""         % Follower Frame(s)
-        PoI      (:,1) struct  = ...        % Point(s) of Interest
-            struct('Name'    , {"Origin", "x-Axis", "y-Axis", "z-Axis"}, ...
-                   'Key'     , {"O"     , "E1"    , "E2"    , "E3"    }, ...
-                   'Position', {[0;0;0] , [25;0;0], [0;25;0], [0;0;25]})
+        Name     (1,1) string    = ""       % System Name
+        Date     (1,1) datetime  = datetime % Date Creation
+        Graph    (1,1) graph     = graph()  % System Graph
     end
     
     methods
-        function obj = KinematicFrame()
-            % All Values Set by Default
+        function obj = KinematicSystem(Type)
+            % Generate Kinematic System by default type
+            if nargin == 0
+                return
+            else
+                switch Type
+                    case "Double Wishbone"
+                        obj.Graph = DoubleWishboneInit() 
+                
         end
         
-        function obj = AddFrame(obj, Name, Key, Base, Origin, Rotation)
-            obj(end+1).Name   = Name;
-            obj(end).Key      = Key;
-            obj(end).Base     = Base;
-            obj(end).Origin   = Origin;
-            obj(end).Rotation = Rotation;
-            obj(end).Follower = char.empty;
+        function obj = AppendSystem(obj,Type)
             
-            BaseIdx = find(strcmp([obj.Key], Base), 1);
-            if strcmp(obj(BaseIdx).Follower,"")
-               obj(BaseIdx).Follower = Key;
-            else
-                obj(BaseIdx).Follower(end+1) = Key;
-            end
         end
         
         function obj = AddPoI(obj, FoI, Name, Key, Position)
@@ -44,23 +31,7 @@ classdef KinematicFrame
             obj(FoI).PoI = [obj(FoI).PoI; Point];
         end
         
-        function [Nodes, Weights] = GenerateGraph(obj, FoI, Nodes, Weights)
-            FoI = find(strcmp([obj.Key],FoI));
-            
-            if ~all(strcmp(obj(FoI).Follower,""))
-                for j = 1:numel(obj(FoI).Follower)
-                    FollowerIdx = find(strcmp([obj.Key],obj(FoI).Follower(j)));
-
-                    Nodes(end+1,:) = [FoI, FollowerIdx];
-                    Weights(end+1) = 1;
-
-                    Nodes(end+1,:) = Nodes(end,2:-1:1);
-                    Weights(end+1) = -1;
-
-                    [Nodes, Weights] = obj.GenerateGraph( ...
-                        obj(FollowerIdx).Key, Nodes, Weights);
-                end
-            end
+        
         end
         
         function obj = UpdateFrame(obj, FoI, Origin, Rotation)
@@ -82,7 +53,7 @@ classdef KinematicFrame
             obj(FoI).PoI(PoI).Position = Position;
         end
         
-        function P = EvaluatePoI(obj, PoI, FoI, FoE)
+        function P = EvaluatePoI(obj, P0, FoI, FoE)
             FoI = obj(strcmp([obj.Key],FoI));
             
             if isstring(PoI) 
