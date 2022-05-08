@@ -110,7 +110,7 @@ classdef SuspensionKinematics
         end
         %}
         
-        %% Point of Interest
+        %% Point of Interest Methods
         function P = EvaluatePoint(obj, P0, F0, F)
             obj.Frame.Nodes;
             
@@ -269,9 +269,11 @@ classdef SuspensionKinematics
                 end
             end
             
-            xlim(obj.Target.Wheelbase.*[-1 1])
-            ylim(obj.Target.Track.*[-1 1])
+            xlim(obj.Target.Wheelbase*3/4.*[-1 1])
+            ylim(obj.Target.Track*3/4.*[-1 1])
             zlim([0, 500])
+            
+            view(120,15)
         end
     end
 end

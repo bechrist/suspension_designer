@@ -125,7 +125,7 @@ function obj = DoubleWishboneDesign(obj)
             bb = -2.*rl;
             cc = rl.^2 - L.^2;
 
-            IC(2) = (-bb + sign(hc).*sqrt(bb.^2 - 4.*aa.*cc))./(2.*aa);
+            IC(2) = (-bb + sign(hc).*sqrt(bb.^2 - 4.*aa.*cc))./(aa);
         end
         
         IC(1) = x0 - sign(x0).*sqrt(L.^2 - (IC(2)-rl).^2);
@@ -190,7 +190,6 @@ function obj = DoubleWishboneDesign(obj)
         LAR = obj.EvaluatePoint("LAR", "X", "X");
 
         z_LA   = ThreePointPlane(LB, FC, SC, "z");
-        n_LA   = ThreePointPlane(LB, FC, SC, "n");
         LAF(3) = z_LA(LAF(1), LAF(2));
         LAR(3) = z_LA(LAR(1), LAR(2));
         
@@ -227,6 +226,10 @@ function obj = DoubleWishboneDesign(obj)
         
         TB = obj.EvaluatePoint("TB", "W", "TR");
         obj.Frame.Nodes{"TR","PoI"}{:}{"TB","Position"}{:}(2) = TB(2);
+        
+        % Removing Redundant PoI's from Axle Frame
+        obj.Frame.Nodes{"X","PoI"}{:} ...
+            (["LAF", "LAR", "UAF", "UAR", "TA"],:) = [];
         
         % Static Member Planes
         function P = ThreePointPlane(A,B,C,Form)    

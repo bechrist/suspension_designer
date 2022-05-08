@@ -27,11 +27,11 @@ Target.Type.Linkage = "Double Wishbone";       % Suspension Linkage Type
 
 Target.Track       =  1220;                    % Nominal Front Track Width [mm]
 
-Target.Toe         =  5.50 .* (pi/180);        % Static Toe (Positive Out) [deg -> rad]
+Target.Toe         =  0.50 .* (pi/180);        % Static Toe (Positive Out) [deg -> rad]
 
 Target.PitchCenter =  10;                      % Normalized FBPC Height [%]
 Target.Caster      =  3.00 .* (pi/180);        % Static Caster          [deg -> rad]
-Target.CasterGain  =  0.00 .* (pi/(180*25.4)); % Caster Gain            [deg/in -> rad/mm]
+Target.CasterGain  =  0.25 .* (pi/(180*25.4)); % Caster Gain            [deg/in -> rad/mm]
 
 Target.RollCenter  =  15;                      % Normalized FBRC Height [%]
 Target.Camber      = -1.60 .* (pi/180);        % Static Camber          [deg -> rad]
@@ -84,5 +84,47 @@ for P = string(fieldnames(Susp.Sample))'
     Susp.Sample.(P)(Susp.Sample.(P)==true) = 1/2;
 end
 
-%%% Design Generation
+%%% Design Generation (Static Configuration)
 Susp = Susp.GenerateLinkage;
+
+%%% Jounce-Steer Sweep
+
+
+%% Plotting
+Susp.PlotSystem
+
+CP = Susp.EvaluatePoint( "O", "T", "I");
+FC = Susp.EvaluatePoint("FC", "I", "I");
+SC = Susp.EvaluatePoint("SC", "I", "I");
+
+plot3([CP(1),FC(1)], [CP(2),FC(2)], [CP(3),FC(3)], 'k:')
+plot3([CP(1),SC(1)], [CP(2),SC(2)], [CP(3),SC(3)], 'k:')
+
+for M = {'LA','UA','TR'}
+    A = Susp.EvaluatePoint("O", string(M), "I");
+    B = Susp.EvaluatePoint(string([M{:}(1),'B']), string(M), "I");
+    
+    if strcmp(M,"TR")
+        plot3([A(1),B(1)], [A(2),B(2)], [A(3),B(3)], 'k')
+    else
+        AF = Susp.EvaluatePoint(string([M{:}(1),'AF']), string(M), "I");
+        AR = Susp.EvaluatePoint(string([M{:}(1),'AR']), string(M), "I");
+        
+        plot3([ A(1), B(1)], [ A(2), B(2)], [ A(3), B(3)], 'k--')
+        plot3([AF(1),AR(1)], [AF(2),AR(2)], [AF(3),AR(3)], 'k--')
+        
+        plot3([AF(1), B(1)], [AF(2), B(2)], [AF(3), B(3)], 'k') 
+        plot3([AR(1), B(1)], [AR(2), B(2)], [AR(3), B(3)], 'k') 
+        
+        plot3([AF(1),SC(1)], [AF(2),SC(2)], [AF(3),SC(3)], 'k:')
+    end
+    
+    plot3([B(1),FC(1)], [B(2),FC(2)], [B(3),FC(3)], 'k:')
+end
+
+load('OZShell.mat');
+Rim = {"Rim", OZShell, 'k-'};
+Susp.Frame.Nodes{"W","PoI"}{:} = [Susp.Frame.Nodes{"W","PoI"}{:}; Rim];
+Susp.Frame.Nodes{"W","PoI"}{:}.Properties.RowNames{end} = 'Rim';
+
+Susp.PlotPoint("Rim", "W", "I");
