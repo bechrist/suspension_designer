@@ -4,6 +4,6 @@ import datetime
 
 class KinematicSystem(nx.Graph):
     def __init__(self, Name=str(), Target=dict(), Bound=dict()):
-        self.Date = datatime.dateime.now()
+        self.Date = datetime.dateime.now()
 
         
