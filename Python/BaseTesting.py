@@ -121,7 +121,9 @@ Bound = {'Linkage': Linkage,
 # %% Linkage Design
 ## Initialize Linkage
 Suspension = KinematicSystem('Test', Target, Bound)
+
 ## Sample Design Space
+
 
 ## Static Design Generation
 
