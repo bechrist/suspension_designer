@@ -1,2 +1,2 @@
-.asv
-.cpython-39.pyc
+*.asv
+*.cpython-39.pyc
