@@ -1,6 +1,8 @@
 # %% KinematicSystem 
-import networkx as nx
-import numpy    as np
+import numpy      as np
+import matplotlib as plt
+import networkx   as nx
+
 import datetime
 
 from DoubleWishbone import *
@@ -11,6 +13,9 @@ class KinematicSystem(nx.Graph):
     # structure.
 
     def __init__(self, Name=str(), Target=dict(), Bound=dict()):
+        # Run Super Class Initialization
+        super(KinematicSystem, self).__init__()
+
         # Set Properties
         self.Name   = Name
         self.Date   = datetime.datetime.now()

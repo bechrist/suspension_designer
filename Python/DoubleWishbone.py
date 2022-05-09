@@ -1,7 +1,10 @@
-import numpy    as np
-import networkx as nx
+import numpy      as np
+import matplotlib as plt
+import networkx   as nx
+
 from   copy     import deepcopy
 
+# %% Dictionary Constructors
 def PoI(Title, Position, Style):
     return {'Title'   : Title, 
             'Position': Position, 
@@ -39,10 +42,6 @@ def DoubleWishboneInit(self):
     I['PoI']['PC'] = PoI('Pitch Center'        , np.zeros(3), 'kx')
     I['PoI']['SC'] = PoI('Side Instant Center' , np.zeros(3), 'k*')
 
-    # Body Frame
-    B = Frame('Body', 'I', np.zeros(3), np.zeros(3), 
-        [0,0,1,1,1,0], deepcopy(DefPoI))
-
     # Tire Frame
     T = Frame('Tire', 'I', np.zeros(3), np.zeros(3), 
         [1,1,0,1,0,1], deepcopy(DefPoI))
@@ -54,6 +53,10 @@ def DoubleWishboneInit(self):
     W['PoI']['LB'] = PoI('Lower Pickup'  , np.zeros(3), 'ks')
     W['PoI']['UB'] = PoI('Upper Pickup'  , np.zeros(3), 'ks')
     W['PoI']['TB'] = PoI('Tie Rod Pickup', np.zeros(3), 'ks')
+
+    # Body Frame
+    B = Frame('Body', 'I', np.zeros(3), np.zeros(3), 
+        [0,0,1,1,1,0], deepcopy(DefPoI))
 
     # Axle Frame
     X = Frame('Axle', 'B', np.zeros(3), np.zeros(3), 
@@ -84,6 +87,33 @@ def DoubleWishboneInit(self):
         [0,0,0,1,0,0], deepcopy(DefPoI))
     
     TR['PoI']['TB'] = PoI('Outer Pickup', np.zeros(3), 'ko')
+
+    # Populate Graph Nodes
+    self.add_nodes_from([
+        ('I' , I ),
+        ('T' , T ), 
+        ('W' , W ),
+        ('B' , B ),
+        ('X' , X ),
+        ('LA', LA),
+        ('UA', UA),
+        ('TR', TR),
+    ])
+
+    # Populate Graph Edges
+    self.add_edges_from([
+        ('I','T'), 
+        ('T','W'), 
+        ('I','B'), 
+        ('B','X'), 
+        ('X','LA'), 
+        ('X','UA'), 
+        ('X','TR')
+    ])
+    
+
+    nx.draw(self)
+    plt.show()
 
     return self
 
