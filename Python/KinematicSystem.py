@@ -1,7 +1,7 @@
 # %% KinematicSystem 
-import numpy      as np
-import matplotlib as plt
-import networkx   as nx
+import numpy             as np
+import matplotlib.pyplot as plt
+import networkx          as nx
 
 import datetime
 
@@ -19,9 +19,11 @@ class KinematicSystem(nx.Graph):
         # Set Properties
         self.Name   = Name
         self.Date   = datetime.datetime.now()
+        
         self.Target = Target
         self.Bound  = Bound
-
+        self.Sample = dict()
+        
         # Linkage Initialization Method
         LinkageInit = {"Double Wishbone": DoubleWishboneInit}
 

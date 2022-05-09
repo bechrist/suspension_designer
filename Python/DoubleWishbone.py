@@ -1,6 +1,6 @@
-import numpy      as np
-import matplotlib as plt
-import networkx   as nx
+import numpy             as np
+import matplotlib.pyplot as plt
+import networkx          as nx
 
 from   copy     import deepcopy
 
@@ -111,9 +111,36 @@ def DoubleWishboneInit(self):
         ('X','TR')
     ])
     
+    # Generate Shortest Path Tree
+    self.Path = nx.shortest_path(self)
 
-    nx.draw(self)
-    plt.show()
+    ## Generate Sample Structure
+    # This is extremely dependent on the choice of design
+    # rules applied during the design generation process. Please
+    # refer to DoubleWishboneDesign() for more details.
+    #
+    # Key:
+    # 1: Value is Sampled
+    # 0: Value is Auto-Calculated or Fixed
+    
+    # Default Sample Structure
+    self.Sample['Linkage'] = dict()
+
+    self.Sample['Linkage']['LAF'] = np.array([1,1,0])
+    self.Sample['Linkage']['LAR'] = np.array([1,1,0])
+    self.Sample['Linkage']['UAF'] = np.array([1,0,0])
+    self.Sample['Linkage']['UAR'] = np.array([1,0,0])
+    self.Sample['Linkage']['TA']  = np.array([1,1,0])
+
+    self.Sample['Linkage']['LB']  = np.array([1,1,1])
+    self.Sample['Linkage']['UB']  = np.array([1,0,1])
+    self.Sample['Linkage']['TB']  = np.array([1,1,1])
+
+    # Parsing Bound Restricted Values
+    for p in list(self.Sample['Linkage'].keys()):
+        for i in np.argwhere(self.Sample['Linkage'][p]==1):
+            if (np.diff(self.Bound['Linkage'][p][i])==0)[0]:
+                self.Sample['Linkage'][p][i] = 0
 
     return self
 

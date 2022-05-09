@@ -118,12 +118,12 @@ function obj = DoubleWishboneInit(obj)
     obj.Sample.LAF = [1 1 0]';
     obj.Sample.LAR = [1 1 0]';
     obj.Sample.UAF = [1 0 0]';
-    obj.Sample.UAR = [1 1 0]';
-    obj.Sample.TA  = [1 1 1]';
+    obj.Sample.UAR = [1 0 0]';
+    obj.Sample.TA  = [1 1 0]';
 
     obj.Sample.LB  = [1 1 1]';
     obj.Sample.UB  = [1 0 1]';
-    obj.Sample.TB  = [1 1 0]';
+    obj.Sample.TB  = [1 1 1]';
 
     % Determining if Bounds Restrict Sampled Values
     for PoI = ["LAF", "LAR", "UAF", "UAR", "TA", "LB", "UB", "TB"]
