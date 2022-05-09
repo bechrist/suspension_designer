@@ -8,7 +8,7 @@ function obj = DoubleWishboneInit(obj)
                     {[0;0;0] ; [25;0;0]; [0;25;0]; [0;0;25]}, ...
                     {'k.'; 'k.'; 'k.'; 'k.'});
 
-    DefaultPoI.Properties.VariableNames = {'Title', 'Position','Style'};
+    DefaultPoI.Properties.VariableNames = {'Title', 'Position', 'Style'};
     DefaultPoI.Properties.RowNames = ["O", "E1", "E2", "E3"];
 
     % Intermediate Frame
