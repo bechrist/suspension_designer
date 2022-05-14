@@ -1,11 +1,10 @@
 # %% KinematicSystem 
 import numpy             as np
-import matplotlib.pyplot as plt
 import networkx          as nx
-
 import datetime
 
-from DoubleWishbone import *
+import KinematicGeometry
+from Linkages import DoubleWishbone
 
 class KinematicSystem(nx.Graph):
     # Main class within suspension designer responsible for keeping track of 
@@ -23,8 +22,35 @@ class KinematicSystem(nx.Graph):
         self.Target = Target
         self.Bound  = Bound
         self.Sample = dict()
-        
-        # Linkage Initialization Method
-        LinkageInit = {"Double Wishbone": DoubleWishboneInit}
 
-        self = LinkageInit[self.Target['Type']['Linkage']](self)     
+        # Linkage Initialization
+        LinkageInit = {"Double Wishbone": DoubleWishbone.Init}
+
+        self = LinkageInit[self.Target['Type']['Linkage']](self)  
+
+        # Strut Initialization   
+        StrutInit = {}
+
+        # Spring Initialization    
+        SpringInit = {}
+
+    def GenerateDesign(self, System='All'):
+        if System == 'All':
+            System = list(self.Bound.keys())
+        elif isinstance(System, str):
+            System = System.split()
+
+        # Generation Function Pointer Dictionaries
+        LinkageDesign = {"Double Wishbone": DoubleWishbone.Design}
+        
+        StrutDesign = {}
+
+        SpringDesign = {}
+
+        for Sys in System:
+            if Sys == 'Linkage':
+                self = LinkageDesign[self.Target['Type']['Linkage']](self)
+            elif Sys == 'Strut':
+                self = StrutDesign[self.Target['Type']['Strut']](self)
+            elif Sys == 'Spring':
+                self = SpringDesign[self.Target['Type']['Spring']](self) 

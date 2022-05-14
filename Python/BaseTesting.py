@@ -13,12 +13,11 @@ from KinematicSystem import *
 # %% Targets
 ## Vehicle Targets (Static/Nominal)
 Vehicle = dict()
-Vehicle['CG'] = np.zeros(3)
 
 Vehicle['Wheelbase']   = 1525                     # Wheelbase               [mm]
-Vehicle['WeightDist']  = np.array([50.0,50.0])    # Weight Distribution      [%]
+Vehicle['WeightDist']  = np.array([50.0,50.0])    # Weight Distribution  [%F,%L]
 Vehicle['SprungMass']  = 225                      # Sprung Mass             [kg]
-Vehicle['CG'][2]       = 8.50*(25.4)              # CG Height           [in->mm]
+Vehicle['CG']          = 8.50*(25.4)              # CG Height           [in->mm]
 Vehicle['Ride']        = 2   *(25.4)              # Ride Height         [in->mm]
 Vehicle['Rake']        = 0   *(np.pi/180)         # Rake Angle        [deg->rad]
 Vehicle['LoadedRadius']= 7.85*(25.4)              # Loaded Radius       [in->mm]
@@ -26,10 +25,10 @@ Vehicle['LoadedRadius']= 7.85*(25.4)              # Loaded Radius       [in->mm]
 ## Suspension Type
 Type = dict()
 
-Type['Axle']           = "Front"                  # Axle
-Type['Linkage']        = "Double Wishbone"        # Linkage Type
-Type['Strut']          = "Lower Rod"              # Strut Type
-Type['Spring']         = ["Ride","ARB"]           # Spring Type(s)
+Type['Axle']           = 'Front'                  # Axle
+Type['Linkage']        = 'Double Wishbone'        # Linkage Type
+Type['Strut']          = 'Lower Rod'              # Strut Type
+Type['Spring']         = ['Ride','ARB']           # Spring Type(s)
 
 ## Double Wishbone Targets
 Linkage = dict()
@@ -109,7 +108,7 @@ Strut['PB'] = np.array([[  2.25,  3.75],[- 3.00,- 2.00],[  1.50,  2.50]]) # A
 Spring = dict()
 
 # Inboard  Pickups:     | Longitudinal  |    Lateral    |    Vertical   |
-Spring['SA'] = np.array([[- 3.00,  0.00],[  8.00, 12.00],[ 10.00, 18.00]]) # X
+Spring['SA'] = np.array([[- 3.00,  2.00],[  8.00, 12.00],[ 10.00, 18.00]]) # X
 
 # Outboard Pickups:     | Longitudinal  |    Lateral    |    Vertical   |
 Spring['SB'] = np.array([[np.nan,np.nan],[  2.25,  3.75],[  1.50,  2.50]]) # R
@@ -126,6 +125,7 @@ Suspension = KinematicSystem('Test', Target, Bound)
 
 
 ## Static Design Generation
+Suspension.GenerateDesign(System=['Linkage'])
 
 # %% Linkage Simulation
 ## Jounce & Steer Sweep
