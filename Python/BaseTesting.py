@@ -11,7 +11,7 @@ import numpy as np
 from KinematicSystem import *
 
 # %% Targets
-## Vehicle Targets (Static/Nominal)
+## Vehicle Targets (Static / Nominal)
 Vehicle = dict()
 
 Vehicle['Wheelbase']   = 1525                     # Wheelbase               [mm]

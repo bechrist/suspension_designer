@@ -173,13 +173,13 @@ def Design(self):
     self.nodes['W']['Rotation'][1] = -self.Target['Linkage']['Caster']
 
     # Body Frame
-    self.nodes['B']['Position'][2] = self.Target['Vehicle']['CG'][2]
+    self.nodes['B']['Position'][2] = self.Target['Vehicle']['CG']
     self.nodes['B']['Rotation'][1] = self.Target['Vehicle']['Rake']
 
     # Axle Frame
     self.nodes['X']['Position'][0] = self.nodes['T']['Position'][0]
     self.nodes['X']['Position'][2] = self.Target['Vehicle']['Ride'] \
-        - self.Target['Vehicle']['CG'][2]
+        - self.Target['Vehicle']['CG']
 
     ## Design Space Sampling
     for P in ['LAF','LAR','UAF','UAR','TA','LB','UB','TB']:

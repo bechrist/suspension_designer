@@ -3,8 +3,8 @@ import numpy             as np
 import networkx          as nx
 import datetime
 
-import KinematicGeometry
-from Linkages import DoubleWishbone
+from Resources import GeometrySolvers as geo
+from Linkages  import DoubleWishbone 
 
 class KinematicSystem(nx.Graph):
     # Main class within suspension designer responsible for keeping track of 
